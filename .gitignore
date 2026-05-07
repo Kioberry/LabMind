@@ -14,6 +14,7 @@ env/
 
 # Data files
 backend/data/
+backend/static/
 data/
 
 # Logs
@@ -28,3 +29,5 @@ data/
 # Build / cache
 *.sqlite3
 *.db
+
+# Image files

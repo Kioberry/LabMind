@@ -5,10 +5,9 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="langchain")
 
 from langchain_anthropic import ChatAnthropic
-from langchain.agents import create_react_agent, AgentExecutor
-from langchain.memory import ConversationBufferMemory
+from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 from tools import (
     LOAD_BATCH_TOOL,
@@ -28,14 +27,14 @@ TOOLS AVAILABLE:
 - load_batch_results: Loads all 20 experiment records for a batch
 - find_top_performer: Identifies the best experiment and computes batch statistics
 - generate_next_batch: Uses Bayesian optimization (Latin Hypercube Sampling) to generate 20 new parameter candidates centered around the top performer
-- get_comparison_images: Returns fluorescence microscopy image URLs for visualization
+- get_comparison_images: Returns fluorescence microscopy image URLs. Input: JSON with keys 'top_exp_id' (the top experiment's exp_id string), 'batch_id' (current batch ID), 'baseline_exp_id' (the baseline_exp_id string returned by find_top_performer)
 
 ANALYSIS TASK:
 When given a batch ID to analyze, you must:
 1. Call load_batch_results with the batch ID
 2. Call find_top_performer with the experiments array from step 1
 3. Call generate_next_batch with the top performer, any researcher constraints (empty string if none), and the next batch ID
-4. Call get_comparison_images with the top performer and the baseline transfection rate (first batch mean, or batch mean if only one batch exists)
+4. Call get_comparison_images with the top experiment's exp_id (from step 2), the current batch_id, and the baseline_exp_id returned by find_top_performer (from step 2)
 5. Produce your final answer as a JSON object
 
 YOUR FINAL ANSWER FORMAT:
@@ -74,10 +73,7 @@ class LabMindAgent:
             GET_COMPARISON_IMAGES_TOOL,
         ]
 
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            return_messages=True,
-        )
+        self._chat_history: list = []
 
         prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content=SYSTEM_PROMPT),
@@ -86,23 +82,45 @@ class LabMindAgent:
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
 
-        react_agent = create_react_agent(
+        agent = create_tool_calling_agent(
             llm=self.llm,
             tools=self.tools,
             prompt=prompt,
         )
 
         self.executor = AgentExecutor(
-            agent=react_agent,
+            agent=agent,
             tools=self.tools,
-            memory=self.memory,
             verbose=True,
             max_iterations=10,
             handle_parsing_errors=True,
             return_intermediate_steps=False,
         )
 
-    def _parse_analysis_output(self, raw_output: str) -> dict:
+    def _invoke(self, input_text: str) -> dict:
+        result = self.executor.invoke({
+            "input": input_text,
+            "chat_history": self._chat_history,
+        })
+        self._chat_history.append(HumanMessage(content=input_text))
+        self._chat_history.append(AIMessage(content=self._extract_text(result["output"])))
+        return result
+
+    def _extract_text(self, output) -> str:
+        if isinstance(output, str):
+            return output
+        if isinstance(output, list):
+            parts = []
+            for block in output:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    parts.append(block["text"])
+                elif isinstance(block, str):
+                    parts.append(block)
+            return "".join(parts)
+        return str(output)
+
+    def _parse_analysis_output(self, raw_output) -> dict:
+        raw_output = self._extract_text(raw_output)
         cleaned = re.sub(r'```(?:json)?\s*', '', raw_output).strip()
         cleaned = cleaned.replace('```', '').strip()
         start = cleaned.find('{')
@@ -119,7 +137,7 @@ class LabMindAgent:
         )
         last_error = None
         for attempt in range(3):
-            result = self.executor.invoke({"input": input_text})
+            result = self._invoke(input_text)
             try:
                 return self._parse_analysis_output(result["output"])
             except (ValueError, Exception) as e:
@@ -132,5 +150,5 @@ class LabMindAgent:
         raise RuntimeError(f"Agent failed to produce structured output after 3 attempts: {last_error}")
 
     def chat(self, message: str) -> str:
-        result = self.executor.invoke({"input": message})
-        return result["output"]
+        result = self._invoke(message)
+        return self._extract_text(result["output"])

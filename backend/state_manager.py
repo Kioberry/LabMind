@@ -3,7 +3,7 @@ import threading
 from pathlib import Path
 
 STATE_ENUM = {
-    "IDLE", "RUNNING", "COMPLETE", "ANALYZING",
+    "IDLE", "RUNNING", "COMPLETE", "PROCESSING", "ANALYZING",
     "PROPOSAL_READY", "EDITING", "REGENERATING", "APPROVED"
 }
 
@@ -15,6 +15,8 @@ IDLE_DEFAULTS = {
     "latest_analysis": None,
     "latest_constraints": None,
     "image_urls": None,
+    "processing_log": [],
+    "processing_log_step": None,
 }
 
 
@@ -92,3 +94,43 @@ class StateManager:
             batch_id = f.stem[len("batch_"):]
             ids.append(batch_id)
         return sorted(ids, key=lambda bid: int(bid[1:]))
+
+    def append_processing_log(self, message: str) -> None:
+        """Thread-safe append of one line to processing_log in state.json."""
+        with self._lock:
+            state = json.loads((self.data_dir / "state.json").read_text())
+            state.setdefault("processing_log", []).append(message)
+            (self.data_dir / "state.json").write_text(json.dumps(state, indent=2))
+
+    def reset_processing_log(self) -> None:
+        """Reset processing_log to [] and processing_log_step to None."""
+        with self._lock:
+            state = json.loads((self.data_dir / "state.json").read_text())
+            state["processing_log"] = []
+            state["processing_log_step"] = None
+            (self.data_dir / "state.json").write_text(json.dumps(state, indent=2))
+
+    def update_experiment_result(self, batch_id: str, exp_id: str, transfection_rate: float) -> None:
+        """Update one experiment's transfection_rate in its batch JSON. Thread-safe."""
+        batch_path = self.data_dir / "batches" / f"batch_{batch_id}.json"
+        with self._lock:
+            batch = json.loads(batch_path.read_text())
+            for exp in batch["experiments"]:
+                if exp["exp_id"] == exp_id:
+                    exp["transfection_rate"] = transfection_rate
+                    break
+            batch_path.write_text(json.dumps(batch, indent=2))
+
+    def finalize_batch_top_performer(self, batch_id: str) -> None:
+        """Set is_top_performer=True on the highest transfection_rate experiment. Thread-safe."""
+        batch_path = self.data_dir / "batches" / f"batch_{batch_id}.json"
+        with self._lock:
+            batch = json.loads(batch_path.read_text())
+            experiments = batch["experiments"]
+            # reset all
+            for exp in experiments:
+                exp["is_top_performer"] = False
+            # find top
+            top = max(experiments, key=lambda e: (e.get("transfection_rate") or 0.0))
+            top["is_top_performer"] = True
+            batch_path.write_text(json.dumps(batch, indent=2))

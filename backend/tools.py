@@ -94,32 +94,22 @@ def load_batch_results_impl(batch_id: str) -> dict:
 def find_top_performer_impl(experiments: list[dict]) -> dict:
     ranked = sorted(experiments, key=lambda e: e["transfection_rate"], reverse=True)
     top = ranked[0]
+    baseline = ranked[-1]
     rates = [e["transfection_rate"] for e in experiments]
     return {
         "top_experiment": top,
+        "baseline_exp_id": baseline["exp_id"],
         "batch_mean": round(statistics.mean(rates), 4),
         "batch_std": round(statistics.stdev(rates), 4),
         "top_transfection_rate": top["transfection_rate"],
     }
 
 
-def get_comparison_images_impl(top_performer: dict, baseline_transfection_rate: float) -> dict:
-    rate = top_performer["transfection_rate"]
-    if rate >= 0.75:
-        optimal = "/static/images/positive_1.png"
-    elif rate >= 0.50:
-        optimal = "/static/images/positive_2.png"
-    else:
-        optimal = "/static/images/positive_3.png"
-
-    if baseline_transfection_rate >= 0.50:
-        baseline = "/static/images/negative_1.png"
-    elif baseline_transfection_rate >= 0.30:
-        baseline = "/static/images/negative_2.png"
-    else:
-        baseline = "/static/images/negative_3.png"
-
-    return {"optimal": optimal, "baseline": baseline}
+def get_comparison_images_impl(top_exp_id: str, batch_id: str, baseline_exp_id: str) -> dict:
+    return {
+        "optimal": f"/static/images/processed/{top_exp_id}_gfp.png",
+        "baseline": f"/static/images/processed/{baseline_exp_id}_gfp.png",
+    }
 
 
 def generate_next_batch_impl(top_performer: dict, constraints: str | None, batch_id: str) -> list[dict]:
@@ -201,13 +191,15 @@ def _tool_generate_next_batch(input_json: str) -> str:
         return f"Error: {e}"
 
 
-def _tool_get_comparison_images(input_json: str) -> str:
+def _tool_get_comparison_images(input_str: str) -> str:
     try:
-        data = json.loads(input_json)
-        return json.dumps(get_comparison_images_impl(
-            top_performer=data["top_performer"],
-            baseline_transfection_rate=float(data["baseline_transfection_rate"]),
-        ))
+        data = json.loads(input_str)
+        result = get_comparison_images_impl(
+            top_exp_id=data["top_exp_id"],
+            batch_id=data["batch_id"],
+            baseline_exp_id=data["baseline_exp_id"],
+        )
+        return json.dumps(result)
     except Exception as e:
         return f"Error: {e}"
 
@@ -232,6 +224,12 @@ GENERATE_NEXT_BATCH_TOOL = Tool(
 
 GET_COMPARISON_IMAGES_TOOL = Tool(
     name="get_comparison_images",
-    description="Get fluorescence microscopy image URLs for visualization. Input: JSON with keys 'top_performer' (experiment dict) and 'baseline_transfection_rate' (float, mean of first batch). Returns optimal and baseline image URLs.",
+    description=(
+        "Get fluorescence microscopy image URLs for visualization. "
+        "Input: JSON with keys 'top_exp_id' (string, the top experiment's exp_id), "
+        "'batch_id' (string, current batch ID), "
+        "'baseline_exp_id' (string, the baseline experiment's exp_id — use the baseline_exp_id "
+        "returned by find_top_performer). Returns optimal and baseline image URLs."
+    ),
     func=_tool_get_comparison_images,
 )

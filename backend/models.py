@@ -33,6 +33,8 @@ class StatusResponse(BaseModel):
     latest_constraints: Optional[str]
     image_urls: Optional[ImageUrls]
     proposal_summary: Optional[ProposalSummary]
+    processing_log: list[str] = []
+    processing_log_step: Optional[str] = None
 
 
 class ExperimentParameters(BaseModel):
@@ -47,7 +49,6 @@ class Experiment(BaseModel):
     exp_id: str
     parameters: ExperimentParameters
     transfection_rate: Optional[float]
-    cell_viability: Optional[float]
     is_top_performer: Optional[bool]
 
 

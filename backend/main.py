@@ -1,6 +1,8 @@
 import os
 import asyncio
 import json
+import logging
+import time
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
@@ -13,6 +15,7 @@ import anthropic
 
 from state_manager import StateManager
 from agent import LabMindAgent
+from image_processing import process_experiment
 from models import (
     ChatRequest, ChatResponse,
     StatusResponse, BatchResponse, BatchSummary,
@@ -74,8 +77,6 @@ def _rewrite_analysis_with_constraints(
     return message.content[0].text.strip()
 
 
-# --- Endpoints ---
-
 @app.get("/health")
 async def health_check() -> dict:
     return {"status": "ok"}
@@ -115,6 +116,8 @@ async def get_status() -> StatusResponse:
         latest_constraints=s.get("latest_constraints"),
         image_urls=image_urls,
         proposal_summary=proposal_summary,
+        processing_log=s.get("processing_log", []),
+        processing_log_step=s.get("processing_log_step"),
     )
 
 
@@ -192,13 +195,50 @@ async def regenerate_endpoint(background_tasks: BackgroundTasks) -> RegenerateRe
     return RegenerateResponse(status="started")
 
 
-# --- Background tasks ---
+def process_batch_with_log(batch_id: str, exp_ids: list[str]) -> list[dict]:
+    results = []
+    for i, exp_id in enumerate(exp_ids):
+        well_index = i + 1
+        result = process_experiment(well_index, exp_id)
+        results.append({"exp_id": exp_id, **result})
+        state_manager.update_experiment_result(batch_id, exp_id, result["transfection_rate"])
+        rate_pct = round(result["transfection_rate"] * 100, 1)
+        state_manager.append_processing_log(
+            f"Processed {exp_id}: detected {rate_pct}% GFP+ transfection efficiency"
+        )
+        time.sleep(0.4)
+    state_manager.finalize_batch_top_performer(batch_id)
+    if not results:
+        return results
+    top = max(results, key=lambda r: r["transfection_rate"])
+    state_manager.append_processing_log(
+        f"Image processing complete. Top performer: {top['exp_id']} "
+        f"at {round(top['transfection_rate'] * 100, 1)}% transfection efficiency."
+    )
+    return results
+
 
 async def run_agent_loop(batch_id: str) -> None:
+    state_manager.reset_processing_log()
     await asyncio.sleep(2)
     state_manager.set_state("COMPLETE")
+    state_manager.set_state("PROCESSING")
+
+    batch_data = state_manager.read_batch(batch_id)
+    exp_ids = [e["exp_id"] for e in batch_data["experiments"]]
+    await asyncio.to_thread(process_batch_with_log, batch_id, exp_ids)
+
     state_manager.set_state("ANALYZING")
-    result = await asyncio.to_thread(agent.run_analysis_loop, batch_id)
+    state_manager.append_processing_log("Running scientific analysis with AI agent...")
+
+    try:
+        result = await asyncio.to_thread(agent.run_analysis_loop, batch_id)
+    except Exception as exc:
+        logging.error("Agent analysis failed: %s", exc)
+        state_manager.update_state({"current_state": "IDLE"})
+        return
+
+    state_manager.append_processing_log("Proposal ready for researcher review.")
     next_id = _next_batch_id(batch_id)
     state_manager.update_state({
         "latest_analysis": result["analysis_text"],
@@ -246,7 +286,7 @@ async def finalize_approval() -> None:
         "status": "pending",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "experiments": [
-            {**exp, "transfection_rate": None, "cell_viability": None, "is_top_performer": False}
+            {**exp, "transfection_rate": None, "is_top_performer": False}
             for exp in proposal["experiments"]
         ],
     }

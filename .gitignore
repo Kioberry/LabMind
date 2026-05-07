@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Data files
+backend/data/
+data/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Build / cache
+*.sqlite3
+*.db

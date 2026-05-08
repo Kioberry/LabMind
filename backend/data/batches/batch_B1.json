@@ -1,0 +1,248 @@
+{
+  "batch_id": "B1",
+  "description": "Initial wide-parameter exploration",
+  "status": "complete",
+  "created_at": "2025-01-07T09:00:00Z",
+  "experiments": [
+    {
+      "exp_id": "EXP-B1-01",
+      "parameters": {
+        "pH": 6.0,
+        "temperature_c": 35,
+        "concentration_mg_ml": 0.1,
+        "lipid_ratio": "2:1",
+        "incubation_hours": 2
+      },
+      "transfection_rate": 0.08364339744649008,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-02",
+      "parameters": {
+        "pH": 8.0,
+        "temperature_c": 42,
+        "concentration_mg_ml": 0.5,
+        "lipid_ratio": "4:1",
+        "incubation_hours": 8
+      },
+      "transfection_rate": 0.09759851525879208,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-03",
+      "parameters": {
+        "pH": 7.8,
+        "temperature_c": 41,
+        "concentration_mg_ml": 0.45,
+        "lipid_ratio": "4:1",
+        "incubation_hours": 7
+      },
+      "transfection_rate": 0.13536204910101654,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-04",
+      "parameters": {
+        "pH": 6.1,
+        "temperature_c": 35,
+        "concentration_mg_ml": 0.12,
+        "lipid_ratio": "2:1",
+        "incubation_hours": 2
+      },
+      "transfection_rate": 0.17389650161301262,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-05",
+      "parameters": {
+        "pH": 7.7,
+        "temperature_c": 40,
+        "concentration_mg_ml": 0.43,
+        "lipid_ratio": "4:1",
+        "incubation_hours": 6
+      },
+      "transfection_rate": 0.08635760868197133,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-06",
+      "parameters": {
+        "pH": 7.5,
+        "temperature_c": 40,
+        "concentration_mg_ml": 0.4,
+        "lipid_ratio": "4:1",
+        "incubation_hours": 6
+      },
+      "transfection_rate": 0.09528349612213191,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-07",
+      "parameters": {
+        "pH": 6.3,
+        "temperature_c": 36,
+        "concentration_mg_ml": 0.15,
+        "lipid_ratio": "2:1",
+        "incubation_hours": 3
+      },
+      "transfection_rate": 0.03222155430096961,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-08",
+      "parameters": {
+        "pH": 7.3,
+        "temperature_c": 39,
+        "concentration_mg_ml": 0.37,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 6
+      },
+      "transfection_rate": 0.2021177749872642,
+      "is_top_performer": true
+    },
+    {
+      "exp_id": "EXP-B1-09",
+      "parameters": {
+        "pH": 6.5,
+        "temperature_c": 37,
+        "concentration_mg_ml": 0.2,
+        "lipid_ratio": "2:1",
+        "incubation_hours": 4
+      },
+      "transfection_rate": 0.05364674662430553,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-10",
+      "parameters": {
+        "pH": 7.1,
+        "temperature_c": 38,
+        "concentration_mg_ml": 0.33,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 5
+      },
+      "transfection_rate": 0.10195561217599469,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-11",
+      "parameters": {
+        "pH": 6.4,
+        "temperature_c": 37,
+        "concentration_mg_ml": 0.22,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 3
+      },
+      "transfection_rate": 0.0019008932228654664,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-12",
+      "parameters": {
+        "pH": 7.0,
+        "temperature_c": 38,
+        "concentration_mg_ml": 0.3,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 5
+      },
+      "transfection_rate": 0.0,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-13",
+      "parameters": {
+        "pH": 6.6,
+        "temperature_c": 37,
+        "concentration_mg_ml": 0.25,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 4
+      },
+      "transfection_rate": 0.0940471567556779,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-14",
+      "parameters": {
+        "pH": 6.8,
+        "temperature_c": 37,
+        "concentration_mg_ml": 0.27,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 4
+      },
+      "transfection_rate": 0.1331646355938248,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-15",
+      "parameters": {
+        "pH": 7.2,
+        "temperature_c": 38,
+        "concentration_mg_ml": 0.32,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 5
+      },
+      "transfection_rate": 0.11417872882893726,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-16",
+      "parameters": {
+        "pH": 6.9,
+        "temperature_c": 37,
+        "concentration_mg_ml": 0.29,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 4
+      },
+      "transfection_rate": 0.08406068379305233,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-17",
+      "parameters": {
+        "pH": 6.65,
+        "temperature_c": 37,
+        "concentration_mg_ml": 0.26,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 4
+      },
+      "transfection_rate": 0.04298106530041026,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-18",
+      "parameters": {
+        "pH": 7.4,
+        "temperature_c": 38,
+        "concentration_mg_ml": 0.35,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 5
+      },
+      "transfection_rate": 0.10238698093013845,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-19",
+      "parameters": {
+        "pH": 6.7,
+        "temperature_c": 37,
+        "concentration_mg_ml": 0.275,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 4
+      },
+      "transfection_rate": 0.07857000372018391,
+      "is_top_performer": false
+    },
+    {
+      "exp_id": "EXP-B1-20",
+      "parameters": {
+        "pH": 6.75,
+        "temperature_c": 37,
+        "concentration_mg_ml": 0.28,
+        "lipid_ratio": "3:1",
+        "incubation_hours": 4
+      },
+      "transfection_rate": 0.13090492273425325,
+      "is_top_performer": false
+    }
+  ]
+}

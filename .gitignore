@@ -12,10 +12,11 @@ env/
 # Environment variables
 .env
 
-# Data files
-backend/data/
-backend/static/
-data/
+# Runtime-generated files only
+backend/static/images/processed/
+backend/data/state.json
+backend/data/proposals/
+/data/
 
 # Logs
 *.log
@@ -29,5 +30,3 @@ data/
 # Build / cache
 *.sqlite3
 *.db
-
-# Image files

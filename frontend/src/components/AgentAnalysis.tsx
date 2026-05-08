@@ -109,9 +109,11 @@ export default function AgentAnalysis({ status }: { status: StatusResponse }) {
       {/* Pinned bottom: chat + actions */}
       <div className="shrink-0">
         <div className="max-w-5xl mx-auto px-8 py-5">
-          <ChatInterface history={status.chat_history} disabled={chatDisabled} />
-          <div className="mt-4">
-            <ActionRow status={status} />
+          <div className="glass-dark p-5">
+            <ChatInterface history={status.chat_history} disabled={chatDisabled} />
+            <div className="mt-4">
+              <ActionRow status={status} />
+            </div>
           </div>
         </div>
       </div>

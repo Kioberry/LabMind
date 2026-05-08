@@ -75,15 +75,15 @@ export default function ExperimentsTable() {
     sortKey === key ? (sortDir === 'desc' ? ' ↓' : ' ↑') : '';
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background px-8 py-10 max-w-6xl mx-auto">
-      <p className="text-label tracking-label uppercase text-secondary mb-6">
+    <div className="flex-1 overflow-y-auto px-8 py-10 w-full">
+      <p className="text-xs tracking-[0.2em] uppercase font-light text-secondary mb-6">
         Experiments
       </p>
 
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setFilterBatch(null)}
-          className={`text-xs px-3 py-1 border rounded-[4px] transition-colors ${
+          className={`text-xs px-4 py-1.5 border rounded-[4px] transition-colors ${
             filterBatch === null
               ? 'border-accent text-accent'
               : 'border-surface-border text-muted hover:border-secondary'
@@ -95,7 +95,7 @@ export default function ExperimentsTable() {
           <button
             key={s.batch_id}
             onClick={() => setFilterBatch(s.batch_id)}
-            className={`text-xs px-3 py-1 border rounded-[4px] transition-colors ${
+            className={`text-xs px-4 py-1.5 border rounded-[4px] transition-colors ${
               filterBatch === s.batch_id
                 ? 'border-accent text-accent'
                 : 'border-surface-border text-muted hover:border-secondary'
@@ -106,18 +106,18 @@ export default function ExperimentsTable() {
         ))}
       </div>
 
-      <div className="border border-surface-border rounded-[4px] overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="glass-gleam overflow-hidden">
+        <table className="w-full">
           <thead>
-            <tr className="border-b border-surface-border">
-              <th className="text-left px-3 py-2 text-muted text-label tracking-label uppercase">
+            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <th className="text-left px-5 py-4 text-muted text-xs tracking-[0.14em] uppercase font-light">
                 Batch
               </th>
               {cols.map((c) => (
                 <th
                   key={c.key}
                   onClick={() => handleSort(c.key)}
-                  className="text-left px-3 py-2 text-muted text-label tracking-label uppercase cursor-pointer hover:text-secondary select-none"
+                  className="text-left px-5 py-4 text-muted text-xs tracking-[0.14em] uppercase font-light cursor-pointer hover:text-secondary select-none transition-colors"
                 >
                   {c.label}{arrow(c.key)}
                 </th>
@@ -130,26 +130,42 @@ export default function ExperimentsTable() {
               return (
                 <tr
                   key={exp.exp_id}
-                  className="border-b border-surface-border hover:bg-surface transition-colors"
-                  style={
-                    exp.is_top_performer
-                      ? { borderLeft: '2px solid #c8a96e' }
-                      : {}
-                  }
+                  className="transition-colors"
+                  style={{
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    background: exp.is_top_performer
+                      ? 'rgba(200,169,110,0.05)'
+                      : undefined,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLTableRowElement).style.background = exp.is_top_performer
+                      ? 'rgba(200,169,110,0.09)'
+                      : 'rgba(255,255,255,0.03)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLTableRowElement).style.background = exp.is_top_performer
+                      ? 'rgba(200,169,110,0.05)'
+                      : '';
+                  }}
                 >
-                  <td className="px-3 py-2 text-muted">{exp.batch_id}</td>
-                  <td className="px-3 py-2 text-secondary">{exp.exp_id}</td>
-                  <td className="px-3 py-2 text-secondary">{exp.parameters.pH}</td>
-                  <td className="px-3 py-2 text-secondary">{exp.parameters.temperature_c}</td>
-                  <td className="px-3 py-2 text-secondary">{exp.parameters.concentration_mg_ml}</td>
-                  <td className="px-3 py-2 text-secondary">{exp.parameters.incubation_hours}</td>
-                  <td className="px-3 py-2">
-                    <div className="relative h-5 rounded-sm overflow-hidden bg-surface min-w-[80px]">
+                  <td className="px-5 py-4 text-base font-light text-muted">{exp.batch_id}</td>
+                  <td className="px-5 py-4 text-base font-light" style={{ color: exp.is_top_performer ? '#c8a96e' : 'rgba(255,255,255,0.65)' }}>{exp.exp_id}</td>
+                  <td className="px-5 py-4 text-base font-light text-secondary">{exp.parameters.pH}</td>
+                  <td className="px-5 py-4 text-base font-light text-secondary">{exp.parameters.temperature_c}</td>
+                  <td className="px-5 py-4 text-base font-light text-secondary">{exp.parameters.concentration_mg_ml}</td>
+                  <td className="px-5 py-4 text-base font-light text-secondary">{exp.parameters.incubation_hours}</td>
+                  <td className="px-5 py-4">
+                    <div className="relative h-6 rounded-sm overflow-hidden min-w-[100px]" style={{ background: 'rgba(255,255,255,0.05)' }}>
                       <div
-                        className="absolute inset-y-0 left-0 bg-accent opacity-20"
-                        style={{ width: `${rate * 100}%` }}
+                        className="absolute inset-y-0 left-0"
+                        style={{
+                          width: `${rate * 100}%`,
+                          background: exp.is_top_performer
+                            ? 'rgba(200,169,110,0.28)'
+                            : 'rgba(200,169,110,0.15)',
+                        }}
                       />
-                      <span className="absolute inset-0 flex items-center px-1.5 text-primary text-xs">
+                      <span className="absolute inset-0 flex items-center px-2 text-sm font-light" style={{ color: exp.is_top_performer ? '#c8a96e' : 'rgba(255,255,255,0.75)' }}>
                         {exp.transfection_rate != null
                           ? `${(rate * 100).toFixed(0)}%`
                           : '—'}

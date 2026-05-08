@@ -13,7 +13,7 @@ function Frame({
   labelColor: string;
 }) {
   return (
-    <div className="image-frame flex-1 border border-surface-border bg-surface rounded-[4px] overflow-hidden">
+    <div className="image-frame glass-card flex-1 overflow-hidden">
       <div className="relative w-full aspect-video bg-[#111110]">
         {src ? (
           <Image

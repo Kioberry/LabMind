@@ -36,6 +36,7 @@ export default function ActionRow({ status }: { status: StatusResponse }) {
         disabled={!approveEnabled}
         className="flex items-center gap-2 border px-6 py-2.5 text-sm tracking-widest uppercase transition-colors disabled:opacity-30"
         style={{
+          background: '#0a0a09',
           borderColor: approveEnabled ? '#c8a96e' : 'rgba(255,255,255,0.07)',
           color: approveEnabled ? '#c8a96e' : 'rgba(255,255,255,0.25)',
         }}
@@ -48,6 +49,7 @@ export default function ActionRow({ status }: { status: StatusResponse }) {
         onClick={handleRegenerate}
         disabled={!regenEnabled}
         className="flex items-center gap-2 border border-surface-border text-secondary px-6 py-2.5 text-sm tracking-widest uppercase hover:border-accent hover:text-accent transition-colors disabled:opacity-30"
+        style={{ background: '#0a0a09' }}
       >
         {regenPending && <span className="w-3 h-3 border border-secondary border-t-transparent rounded-full animate-spin" />}
         Regenerate Proposal

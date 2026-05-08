@@ -34,6 +34,107 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.main-content {
+  background-image: url('/background.svg');
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: auto 100%;
+}
+
 ::selection {
   background-color: rgba(200, 169, 110, 0.25);
+}
+
+/* Glass card */
+.glass-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.055) 0%, rgba(200,169,110,0.025) 100%);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 14px;
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.glass-card:hover {
+  border-color: rgba(200,169,110,0.28);
+  box-shadow: 0 0 0 1px rgba(200,169,110,0.22), 0 4px 32px rgba(200,169,110,0.12), inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* Gleaming glass — opaque enough to guarantee readability over the background image */
+.glass-gleam {
+  background: linear-gradient(160deg, rgba(16,15,12,0.80) 0%, rgba(10,10,9,0.72) 100%);
+  border: 1px solid rgba(255,255,255,0.11);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 28px rgba(0,0,0,0.28);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px;
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.glass-gleam:hover {
+  border-color: rgba(200,169,110,0.28);
+  box-shadow: 0 0 0 1px rgba(200,169,110,0.22), 0 4px 32px rgba(200,169,110,0.12), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+/* Card section (larger panels like chart containers) */
+.glass-panel {
+  background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(200,169,110,0.015) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 14px;
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.glass-panel:hover {
+  border-color: rgba(200,169,110,0.22);
+  box-shadow: 0 0 0 1px rgba(200,169,110,0.18), 0 6px 36px rgba(200,169,110,0.09), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Hover text — dark green */
+.hover-green {
+  transition: color 0.2s ease;
+}
+.hover-green:hover {
+  color: #3a9c6e !important;
+}
+
+/* Gold breathing glow for log panel */
+@keyframes goldBreath {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(200,169,110,0.22), 0 0 18px rgba(200,169,110,0.07);
+    border-color: rgba(200,169,110,0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(200,169,110,0.6), 0 0 40px rgba(200,169,110,0.22), 0 0 70px rgba(200,169,110,0.08);
+    border-color: rgba(200,169,110,0.5);
+  }
+}
+.animate-gold-breath {
+  animation: goldBreath 2.8s ease-in-out infinite;
+}
+
+/* Chat pill input hover reveal */
+.chat-pill-wrapper {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.chat-pill-wrapper:hover {
+  opacity: 1 !important;
+}
+
+/* Image frame hover — same gold ring as glass-card */
+.image-frame {
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.image-frame:hover {
+  border-color: rgba(200,169,110,0.28);
+  box-shadow: 0 0 0 1px rgba(200,169,110,0.22), 0 4px 32px rgba(200,169,110,0.12), inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* Chip hover */
+.chip-hover {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.chip-hover:hover {
+  border-color: rgba(200,169,110,0.45) !important;
+  box-shadow: 0 0 10px rgba(200,169,110,0.12);
 }

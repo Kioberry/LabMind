@@ -32,12 +32,13 @@ def normalize_channel(arr: np.ndarray) -> np.ndarray:
     return scaled.astype(np.uint8)
 
 
-def compute_transfection_rate(hoechst_arr: np.ndarray, gfp_arr: np.ndarray) -> float:
+def compute_transfection_rate(hoechst_arr: np.ndarray, gfp_arr: np.ndarray) -> dict:
     """
     Per-nucleus GFP intensity classification:
     Otsu + watershed segmentation on Hoechst → per-nucleus dilated region → mean GFP →
     median + 2×MAD threshold → GFP+ fraction. More robust than blob counting against
     adjacent/split nuclei artifacts.
+    Returns: {"rate": float, "total_nuclei": int, "gfp_positive": int}
     """
     thresh = threshold_otsu(hoechst_arr)
     nuclei_mask = hoechst_arr > thresh
@@ -51,7 +52,7 @@ def compute_transfection_rate(hoechst_arr: np.ndarray, gfp_arr: np.ndarray) -> f
     unique_labels = [label_id for label_id in np.unique(nuclei_labels) if label_id != 0]
     total_nuclei = len(unique_labels)
     if total_nuclei == 0:
-        return 0.0
+        return {"rate": 0.0, "total_nuclei": 0, "gfp_positive": 0}
 
     gfp_float = gfp_arr.astype(np.float32)
     mean_gfp_values = []
@@ -66,7 +67,8 @@ def compute_transfection_rate(hoechst_arr: np.ndarray, gfp_arr: np.ndarray) -> f
     threshold = median_val + 2.0 * mad
 
     gfp_positive = int(np.sum(mean_gfp_arr > threshold))
-    return float(np.clip(gfp_positive / total_nuclei, 0.0, 1.0))
+    rate = float(np.clip(gfp_positive / total_nuclei, 0.0, 1.0))
+    return {"rate": rate, "total_nuclei": total_nuclei, "gfp_positive": gfp_positive}
 
 
 def process_experiment(well_index: int, exp_id: str) -> dict:
@@ -77,12 +79,14 @@ def process_experiment(well_index: int, exp_id: str) -> dict:
     hoechst_norm = normalize_channel(hoechst_raw)
     gfp_norm = normalize_channel(gfp_raw)
 
-    rate = compute_transfection_rate(hoechst_norm, gfp_norm)
+    result = compute_transfection_rate(hoechst_norm, gfp_norm)
 
     png_filename = f"{exp_id}_gfp.png"
     Image.fromarray(gfp_norm).save(PROCESSED_DIR / png_filename)
 
     return {
-        "transfection_rate": rate,
+        "transfection_rate": result["rate"],
+        "total_nuclei": result["total_nuclei"],
+        "gfp_positive": result["gfp_positive"],
         "gfp_png_path": f"/static/images/processed/{png_filename}",
     }

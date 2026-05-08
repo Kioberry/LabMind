@@ -75,7 +75,7 @@ export default function ExperimentsTable() {
     sortKey === key ? (sortDir === 'desc' ? ' ↓' : ' ↑') : '';
 
   return (
-    <div className="min-h-screen bg-background px-8 py-10 max-w-6xl mx-auto">
+    <div className="flex-1 overflow-y-auto bg-background px-8 py-10 max-w-6xl mx-auto">
       <p className="text-label tracking-label uppercase text-secondary mb-6">
         Experiments
       </p>

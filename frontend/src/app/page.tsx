@@ -3,6 +3,7 @@ import { usePolling } from '@/hooks/usePolling';
 import WelcomePage from '@/components/WelcomePage';
 import RunningView from '@/components/RunningView';
 import AgentAnalysis from '@/components/AgentAnalysis';
+import AppLayout from '@/components/AppLayout';
 import type { SystemState } from '@/lib/types';
 
 const ANALYSIS_STATES: SystemState[] = ['PROCESSING', 'ANALYZING', 'PROPOSAL_READY', 'EDITING', 'REGENERATING'];
@@ -15,10 +16,10 @@ export default function Home() {
     return <WelcomePage />;
   }
   if (ANALYSIS_STATES.includes(status.current_state)) {
-    return <AgentAnalysis status={status} />;
+    return <AppLayout><AgentAnalysis status={status} /></AppLayout>;
   }
   if (RUNNING_STATES.includes(status.current_state)) {
-    return <RunningView status={status} />;
+    return <AppLayout><RunningView status={status} /></AppLayout>;
   }
   return <WelcomePage />;
 }

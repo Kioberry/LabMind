@@ -1,4 +1,5 @@
 import os
+import re
 import asyncio
 import json
 import logging
@@ -29,7 +30,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         os.environ.get("FRONTEND_URL", "http://localhost:3000"),
-        "http://localhost:3000",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST"],
@@ -77,9 +77,35 @@ def _rewrite_analysis_with_constraints(
     return message.content[0].text.strip()
 
 
+@app.on_event("startup")
+async def startup_event() -> None:
+    from image_processing import PROCESSED_DIR
+    for f in PROCESSED_DIR.glob("*.png"):
+        f.unlink(missing_ok=True)
+    state_manager.reset_to_idle()
+
+
 @app.get("/health")
 async def health_check() -> dict:
     return {"status": "ok"}
+
+
+_RESET_BLOCKED_STATES = {"RUNNING", "COMPLETE", "PROCESSING", "ANALYZING", "REGENERATING", "APPROVED"}
+
+@app.post("/api/reset")
+async def reset_endpoint() -> dict:
+    s = state_manager.get_state()
+    if s["current_state"] in _RESET_BLOCKED_STATES:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot reset while background task is running (state: {s['current_state']}). "
+                   "Wait for PROPOSAL_READY or EDITING state."
+        )
+    from image_processing import PROCESSED_DIR
+    for f in PROCESSED_DIR.glob("*.png"):
+        f.unlink(missing_ok=True)
+    state_manager.reset_to_idle()
+    return {"status": "reset"}
 
 
 @app.post("/api/simulate", response_model=SimulateResponse)
@@ -123,6 +149,8 @@ async def get_status() -> StatusResponse:
 
 @app.get("/api/batch/{batch_id}", response_model=BatchResponse)
 async def get_batch(batch_id: str) -> BatchResponse:
+    if not re.fullmatch(r'B\d+', batch_id):
+        raise HTTPException(status_code=400, detail=f"Invalid batch ID: {batch_id}")
     try:
         data = state_manager.read_batch(batch_id)
     except FileNotFoundError:
@@ -197,14 +225,18 @@ async def regenerate_endpoint(background_tasks: BackgroundTasks) -> RegenerateRe
 
 def process_batch_with_log(batch_id: str, exp_ids: list[str]) -> list[dict]:
     results = []
+    n_total = len(exp_ids)
     for i, exp_id in enumerate(exp_ids):
         well_index = i + 1
         result = process_experiment(well_index, exp_id)
         results.append({"exp_id": exp_id, **result})
         state_manager.update_experiment_result(batch_id, exp_id, result["transfection_rate"])
         rate_pct = round(result["transfection_rate"] * 100, 1)
+        total_nuclei = result.get("total_nuclei", 0)
+        gfp_positive = result.get("gfp_positive", 0)
         state_manager.append_processing_log(
-            f"Processed {exp_id}: detected {rate_pct}% GFP+ transfection efficiency"
+            f"[{i + 1}/{n_total}]  {exp_id} — {total_nuclei} nuclei detected, "
+            f"{gfp_positive} GFP+ cells → {rate_pct}% efficiency"
         )
         time.sleep(0.4)
     state_manager.finalize_batch_top_performer(batch_id)
@@ -212,8 +244,8 @@ def process_batch_with_log(batch_id: str, exp_ids: list[str]) -> list[dict]:
         return results
     top = max(results, key=lambda r: r["transfection_rate"])
     state_manager.append_processing_log(
-        f"Image processing complete. Top performer: {top['exp_id']} "
-        f"at {round(top['transfection_rate'] * 100, 1)}% transfection efficiency."
+        f"✓  Image processing complete — top performer: {top['exp_id']} "
+        f"at {round(top['transfection_rate'] * 100, 1)}%"
     )
     return results
 
@@ -226,10 +258,16 @@ async def run_agent_loop(batch_id: str) -> None:
 
     batch_data = state_manager.read_batch(batch_id)
     exp_ids = [e["exp_id"] for e in batch_data["experiments"]]
-    await asyncio.to_thread(process_batch_with_log, batch_id, exp_ids)
+    try:
+        await asyncio.to_thread(process_batch_with_log, batch_id, exp_ids)
+    except Exception as exc:
+        logging.error("Image processing failed: %s", exc)
+        state_manager.set_state("IDLE")
+        return
 
     state_manager.set_state("ANALYZING")
-    state_manager.append_processing_log("Running scientific analysis with AI agent...")
+    state_manager.append_processing_log("Running AI scientific analysis...")
+    state_manager.append_processing_log(f"  Loading experiment data for batch {batch_id}...")
 
     try:
         result = await asyncio.to_thread(agent.run_analysis_loop, batch_id)
@@ -238,7 +276,7 @@ async def run_agent_loop(batch_id: str) -> None:
         state_manager.update_state({"current_state": "IDLE"})
         return
 
-    state_manager.append_processing_log("Proposal ready for researcher review.")
+    state_manager.append_processing_log("✓  Proposal ready for researcher review.")
     next_id = _next_batch_id(batch_id)
     state_manager.update_state({
         "latest_analysis": result["analysis_text"],

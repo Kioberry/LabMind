@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { Geist } from 'next/font/google';
+import { Changa } from 'next/font/google';
 import './globals.css';
 
-const geist = Geist({
+const changa = Changa({
   subsets: ['latin'],
-  weight: ['300', '400'],
+  weight: ['300', '400', '500', '700'],
 });
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={geist.className}>{children}</body>
+      <body className={changa.className}>{children}</body>
     </html>
   );
 }

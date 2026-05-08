@@ -121,6 +121,21 @@ class StateManager:
                     break
             batch_path.write_text(json.dumps(batch, indent=2))
 
+    def reset_to_idle(self) -> None:
+        """Reset state to IDLE defaults, delete B3+ batch files and pending proposal.
+        All file operations are inside the lock to be atomic with concurrent writes."""
+        batches_dir = self.data_dir / "batches"
+        with self._lock:
+            for batch_file in batches_dir.glob("batch_B*.json"):
+                batch_id = batch_file.stem[len("batch_"):]
+                try:
+                    if int(batch_id[1:]) >= 3:
+                        batch_file.unlink(missing_ok=True)
+                except ValueError:
+                    continue
+            (self.data_dir / "proposals" / "pending.json").unlink(missing_ok=True)
+            (self.data_dir / "state.json").write_text(json.dumps(IDLE_DEFAULTS, indent=2))
+
     def finalize_batch_top_performer(self, batch_id: str) -> None:
         """Set is_top_performer=True on the highest transfection_rate experiment. Thread-safe."""
         batch_path = self.data_dir / "batches" / f"batch_{batch_id}.json"

@@ -27,4 +27,7 @@ export const api = {
 
   regenerate: (): Promise<{ status: string }> =>
     fetch(`${BASE_URL}/api/regenerate`, { method: 'POST' }).then(r => r.json()),
+
+  reset: (): Promise<{ status: string }> =>
+    fetch(`${BASE_URL}/api/reset`, { method: 'POST' }).then(r => r.json()),
 };

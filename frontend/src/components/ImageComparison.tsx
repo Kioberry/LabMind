@@ -13,7 +13,7 @@ function Frame({
   labelColor: string;
 }) {
   return (
-    <div className="flex-1 border border-surface-border bg-surface rounded-[4px] overflow-hidden">
+    <div className="image-frame flex-1 border border-surface-border bg-surface rounded-[4px] overflow-hidden">
       <div className="relative w-full aspect-video bg-[#111110]">
         {src ? (
           <Image
@@ -28,9 +28,9 @@ function Frame({
           </div>
         )}
       </div>
-      <div className="px-4 py-2">
+      <div className="px-4 py-3">
         <p
-          className="text-label tracking-label uppercase"
+          className="text-xs tracking-[0.18em] uppercase font-light"
           style={{ color: labelColor }}
         >
           {label}

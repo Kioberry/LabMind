@@ -67,34 +67,41 @@ export default function BatchHistoryPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background px-8 py-10 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-10">
-        <p className="text-label tracking-label uppercase text-secondary">
+    <div className="flex-1 overflow-y-auto px-8 py-10 max-w-5xl mx-auto">
+      <div className="flex items-start justify-between mb-10">
+        <p className="text-sm tracking-[0.2em] uppercase font-light cursor-default" style={{ color: 'rgba(255,255,255,0.4)' }}>
           Experiment History
         </p>
-        <TrendLine summaries={summaries} />
+        {summaries.filter(s => s.best_transfection_rate != null).length >= 2 && (
+          <div className="flex flex-col items-end gap-1">
+            <p className="text-[9px] tracking-[0.14em] uppercase font-light" style={{ color: 'rgba(200,169,110,0.5)' }}>
+              Best efficiency trend
+            </p>
+            <TrendLine summaries={summaries} />
+          </div>
+        )}
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {batches.map((batch) => {
           const top = batch.experiments.find((e) => e.is_top_performer);
           return (
-            <div key={batch.batch_id} className="border border-surface-border rounded-[4px] p-6">
-              <div className="flex items-baseline gap-3 mb-4">
-                <p className="text-accent text-label tracking-label uppercase">
+            <div key={batch.batch_id} className="glass-panel p-7">
+              <div className="flex items-baseline gap-4 mb-6">
+                <p className="text-accent text-sm tracking-[0.16em] uppercase font-medium">
                   Batch {batch.batch_id}
                 </p>
-                <p className="text-muted text-xs">{batch.description}</p>
+                <p className="text-muted text-sm font-light">{batch.description}</p>
               </div>
 
-              <div className="flex gap-0.5 mb-4">
+              <div className="flex gap-0.5 mb-6">
                 {batch.experiments.map((exp) => {
                   const rate = exp.transfection_rate ?? 0;
                   return (
                     <div
                       key={exp.exp_id}
                       title={`${exp.exp_id}: ${(rate * 100).toFixed(0)}%`}
-                      className="flex-1 h-8 rounded-sm flex items-center justify-center text-[8px] font-medium"
+                      className="flex-1 h-10 rounded-sm flex items-center justify-center text-[10px] font-medium"
                       style={{
                         backgroundColor: rateToColor(rate),
                         color: rateToTextColor(rate),
@@ -107,14 +114,14 @@ export default function BatchHistoryPage() {
               </div>
 
               {top && (
-                <div className="flex gap-3 flex-wrap">
-                  <p className="text-muted text-xs">Top performer:</p>
+                <div className="flex gap-4 flex-wrap items-center">
+                  <p className="text-muted text-xs tracking-[0.1em] uppercase">Top performer:</p>
                   {Object.entries(top.parameters).map(([k, v]) => (
-                    <span key={k} className="text-accent text-xs">
+                    <span key={k} className="text-accent text-sm font-light">
                       {k.replace(/_/g, ' ')} {v}
                     </span>
                   ))}
-                  <span className="text-secondary text-xs ml-auto">
+                  <span className="text-secondary text-sm ml-auto">
                     {top.transfection_rate != null
                       ? `${(top.transfection_rate * 100).toFixed(0)}% transfection`
                       : ''}

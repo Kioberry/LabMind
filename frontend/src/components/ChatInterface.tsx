@@ -16,6 +16,10 @@ export default function ChatInterface({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMessages(history);
+  }, [history]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
@@ -33,60 +37,102 @@ export default function ChatInterface({
     }
   };
 
-  return (
-    <div className="border border-surface-border rounded-[4px] overflow-hidden">
-      <div
-        className="overflow-y-auto px-4 py-4 space-y-3"
-        style={{ maxHeight: '320px' }}
-      >
-        {messages.length === 0 && (
-          <p className="text-muted text-sm text-center py-6">
-            Ask the agent about the analysis or add constraints…
-          </p>
-        )}
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[80%] px-3 py-2 rounded-[4px] text-sm font-light ${
-                msg.role === 'user'
-                  ? 'bg-surface text-primary'
-                  : 'border-l-2 bg-surface text-secondary'
-              }`}
-              style={msg.role === 'agent' ? { borderColor: '#c8a96e' } : {}}
-            >
-              {msg.content}
-            </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="border-l-2 bg-surface px-3 py-2 rounded-[4px]" style={{ borderColor: '#c8a96e' }}>
-              <span className="text-muted text-sm animate-pulse">Thinking…</span>
-            </div>
-          </div>
-        )}
-        <div ref={bottomRef} />
-      </div>
+  const hasMessages = messages.length > 0 || isLoading;
 
-      <div className="border-t border-surface-border flex">
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Message history — hidden when empty */}
+      {hasMessages && (
+        <div className="overflow-y-auto max-h-40 space-y-2 px-1">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-[80%] px-3 py-1.5 rounded-2xl text-sm font-light ${
+                  msg.role === 'user'
+                    ? 'bg-surface text-primary'
+                    : 'text-secondary'
+                }`}
+                style={
+                  msg.role === 'agent'
+                    ? {
+                        background: 'rgba(200,169,110,0.06)',
+                        border: '1px solid rgba(200,169,110,0.18)',
+                      }
+                    : { border: '1px solid rgba(255,255,255,0.07)' }
+                }
+              >
+                {msg.content}
+              </div>
+            </div>
+          ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div
+                className="px-3 py-1.5 rounded-2xl"
+                style={{
+                  background: 'rgba(200,169,110,0.06)',
+                  border: '1px solid rgba(200,169,110,0.18)',
+                }}
+              >
+                <span className="text-muted text-sm animate-pulse">Thinking…</span>
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+      )}
+
+      {/* Pill-shaped input bar */}
+      <div
+        className="chat-pill-wrapper group flex items-center gap-0 rounded-full overflow-hidden transition-all duration-300"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(200,169,110,0.02) 100%)',
+          border: '1px solid rgba(255,255,255,0.09)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+          opacity: disabled ? 0.5 : 0.85,
+        }}
+        onFocus={() => {}} // handled by CSS
+      >
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
           disabled={disabled || isLoading}
-          placeholder={disabled ? 'Chat unavailable during analysis…' : 'Message the agent…'}
-          className="flex-1 bg-transparent px-4 py-3 text-sm text-primary placeholder-muted outline-none disabled:opacity-40"
+          placeholder={disabled ? 'Analysis in progress…' : 'Ask the agent or add a constraint…'}
+          className="flex-1 bg-transparent px-5 py-3 text-sm text-primary placeholder-muted outline-none disabled:opacity-60 font-light"
+          style={{ minWidth: 0 }}
+          onFocus={(e) => {
+            const parent = e.currentTarget.parentElement;
+            if (parent) {
+              parent.style.borderColor = 'rgba(200,169,110,0.4)';
+              parent.style.boxShadow = '0 0 0 1px rgba(200,169,110,0.15), inset 0 1px 0 rgba(255,255,255,0.06)';
+              parent.style.opacity = '1';
+            }
+          }}
+          onBlur={(e) => {
+            const parent = e.currentTarget.parentElement;
+            if (parent) {
+              parent.style.borderColor = 'rgba(255,255,255,0.09)';
+              parent.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.06)';
+              parent.style.opacity = disabled ? '0.5' : '0.85';
+            }
+          }}
         />
         <button
           onClick={send}
           disabled={disabled || isLoading || !input.trim()}
-          className="px-4 py-3 text-accent text-sm tracking-widest uppercase hover:bg-surface disabled:opacity-30 transition-colors"
+          className="px-5 py-3 text-xs tracking-[0.18em] uppercase font-light transition-colors duration-200 disabled:opacity-30 shrink-0"
+          style={{ color: '#c8a96e' }}
         >
-          Send
+          {isLoading ? (
+            <span className="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            'Send'
+          )}
         </button>
       </div>
     </div>

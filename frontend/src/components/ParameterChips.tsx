@@ -14,13 +14,17 @@ function Chip({
 }) {
   return (
     <div
-      className="border rounded-[4px] px-3 py-1.5 flex flex-col gap-0.5"
+      className="chip-hover rounded-xl px-3 py-2 flex flex-col gap-0.5 cursor-default"
       style={{
-        borderColor: gold ? 'rgba(200,169,110,0.4)' : 'rgba(255,255,255,0.07)',
-        backgroundColor: gold ? 'rgba(200,169,110,0.05)' : 'rgba(255,255,255,0.02)',
+        borderColor: gold ? 'rgba(200,169,110,0.4)' : 'rgba(255,255,255,0.09)',
+        border: `1px solid ${gold ? 'rgba(200,169,110,0.4)' : 'rgba(255,255,255,0.09)'}`,
+        background: gold
+          ? 'linear-gradient(145deg, rgba(200,169,110,0.09) 0%, rgba(200,169,110,0.03) 100%)'
+          : 'linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)',
+        boxShadow: gold ? 'inset 0 1px 0 rgba(200,169,110,0.12)' : 'inset 0 1px 0 rgba(255,255,255,0.05)',
       }}
     >
-      <p className="text-label tracking-label uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+      <p className="text-[9px] tracking-[0.16em] uppercase font-light" style={{ color: 'rgba(255,255,255,0.3)' }}>
         {label}
       </p>
       <p className="text-sm font-light" style={{ color: gold ? '#c8a96e' : '#ffffff' }}>
@@ -51,7 +55,7 @@ export default function ParameterChips({
     <div className="space-y-4">
       {topPerformer && (
         <div>
-          <p className="text-label tracking-label uppercase text-muted mb-2">
+          <p className="text-[9px] tracking-[0.16em] uppercase text-muted font-light mb-3 cursor-default">
             Current Top Performer
           </p>
           <div className="flex flex-wrap gap-2">
@@ -66,7 +70,7 @@ export default function ParameterChips({
 
       {proposalSummary && (
         <div>
-          <p className="text-label tracking-label uppercase text-muted mb-2">
+          <p className="text-[9px] tracking-[0.16em] uppercase text-muted font-light mb-3 cursor-default">
             Proposed Range ({proposalSummary.experiment_count} experiments)
           </p>
           <div className="flex flex-wrap gap-2">

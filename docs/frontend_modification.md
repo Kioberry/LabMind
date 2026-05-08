@@ -116,20 +116,47 @@ Already covered by the text in Issue 5.
 ```
 Processed EXP-B3-01: detected 9.6% GFP+ transfection efficiency
 ```
-**Target format:**
+
+**Confirmed target format — two phases:**
+
+*PROCESSING phase (one line per experiment, ~0.4s apart):*
 ```
 [1/20]  EXP-B3-01 — 892 nuclei detected, 86 GFP+ cells → 9.6% efficiency
 [2/20]  EXP-B3-02 — 1045 nuclei detected, 110 GFP+ cells → 10.5% efficiency
+[3/20]  EXP-B3-03 — 978 nuclei detected, 123 GFP+ cells → 12.6% efficiency
 ...
-✓  Image processing complete — Top performer: EXP-B3-08 at 20.4%
-⟳  Running AI agent analysis...
+[8/20]  EXP-B3-08 — 934 nuclei detected, 191 GFP+ cells → 20.4% efficiency
+...
+[20/20] EXP-B3-20 — 1102 nuclei detected, 149 GFP+ cells → 13.5% efficiency
+✓  Image processing complete — top performer: EXP-B3-08 at 20.4%
+```
+
+*ANALYZING phase (real LangChain callback events, formatted to natural language):*
+```
+Running AI scientific analysis...
+  Loading experiment data for batch B3...
+  20 experiments loaded successfully.
+  Analyzing results across 20 experiments to find the top performer...
+  Top performer: EXP-B3-08 at 20.4% efficiency (batch mean 9.6%, std ±4.4%)
+  Generating optimized parameter candidates for batch B4...
+  20 parameter sets generated, centered on pH 6.42, 38°C, 0.245 mg/mL.
+  Selecting fluorescence images for comparison...
+  Optimal image: EXP-B3-08 — Baseline image: EXP-B3-11
 ✓  Proposal ready for researcher review.
 ```
-**Change:**
-- `image_processing.py` — `compute_transfection_rate()` returns a dict:
+
+No raw JSON ever reaches the frontend. Each tool event is converted to a natural language
+sentence before being appended to `processing_log`.
+
+**Backend changes required:**
+- `image_processing.py` — `compute_transfection_rate()` returns a dict
   `{"rate": float, "total_nuclei": int, "gfp_positive": int}` instead of a bare float
-- `process_experiment()` passes these values back in its return dict
-- `main.py` — `process_batch_with_log()` builds the richer log string using all three values
+- `process_experiment()` surfaces `total_nuclei` and `gfp_positive` in its return dict
+- `main.py` — `process_batch_with_log()` builds the `[N/20] ... nuclei detected ... GFP+ cells → R%` string
+- `agent.py` — new `LabMindCallbackHandler(BaseCallbackHandler)` class with `on_tool_start`
+  and `on_tool_end` hooks; each hook maps tool name + raw input/output to the natural language
+  strings above; handler calls `state_manager.append_processing_log()` directly; handler is
+  passed into `AgentExecutor` at construction time
 
 ---
 

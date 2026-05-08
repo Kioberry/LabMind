@@ -1,6 +1,6 @@
 # LabMind Implementation Progress
 
-**Last updated:** 2026-05-07
+**Last updated:** 2026-05-07 (Phase 2 complete)
 **Branch:** main
 
 ---
@@ -75,34 +75,59 @@ Implementation is split into two phases:
 
 ---
 
-## Phase 2 — Frontend UX Overhaul (Pending)
+## Phase 2 — Frontend UX Overhaul ✅ Complete
 
-Full spec in `docs/frontend_modification.md`. Implementation order:
+Full spec in `docs/frontend_modification.md`. All steps implemented:
 
-| Step | Task | Files |
-|---|---|---|
-| 1 | `state_manager.reset_to_idle()` method | `state_manager.py` |
-| 2 | Auto-reset on server startup + `POST /api/reset` endpoint | `main.py` |
-| 3 | Richer processing log format (`total_nuclei`, `gfp_positive` in output) | `image_processing.py`, `main.py` |
-| 4 | `Sidebar.tsx` + `AppLayout.tsx` | new files |
-| 5 | Wire `AppLayout` into all non-Welcome routes | `page.tsx`, `history/page.tsx`, `experiments/page.tsx` |
-| 6 | New `Analysis` page with Recharts charts | `app/analysis/page.tsx` (new) |
-| 7 | Update `MetricCards.tsx`: replace "Next Proposal" → "Batch Mean" | `MetricCards.tsx` |
-| 8 | Compact `ChatInterface.tsx` | `ChatInterface.tsx` |
-| 9 | `RunningView.tsx`: button rename + loading state + descriptive text | `RunningView.tsx` |
-| 10 | `WelcomePage.tsx`: expanded platform intro copy | `WelcomePage.tsx` |
-| 11 | Image fade-in animation | `AgentAnalysis.tsx`, `tailwind.config.ts` |
+| Step | Task | Files | Status |
+|---|---|---|---|
+| 1 | `state_manager.reset_to_idle()` method | `state_manager.py` | ✅ |
+| 2 | Auto-reset on server startup + `POST /api/reset` endpoint | `main.py` | ✅ |
+| 3 | Richer processing log format (`total_nuclei`, `gfp_positive` in output) | `image_processing.py`, `main.py` | ✅ |
+| 4 | `Sidebar.tsx` + `AppLayout.tsx` | new files | ✅ |
+| 5 | Wire `AppLayout` into all non-Welcome routes | `page.tsx`, `history/page.tsx`, `experiments/page.tsx` | ✅ |
+| 6 | New `Analysis` page with Recharts charts | `app/analysis/page.tsx`, `AnalysisDashboard.tsx` (new) | ✅ |
+| 7 | Update `MetricCards.tsx`: replace "Next Proposal" → "Batch Mean" | `MetricCards.tsx` | ✅ |
+| 8 | Compact `ChatInterface.tsx` | `ChatInterface.tsx` | ✅ |
+| 9 | `RunningView.tsx`: button rename + loading state + descriptive text | `RunningView.tsx` | ✅ |
+| 10 | `WelcomePage.tsx`: expanded platform intro copy | `WelcomePage.tsx` | ✅ |
+| 11 | Image fade-in animation | `AgentAnalysis.tsx`, `tailwind.config.ts` | ✅ |
+| 12 | `api.ts`: add `reset()` call | `api.ts` | ✅ |
+
+### Phase 2 — Summary of Changes
+
+#### Backend
+| File | Change |
+|---|---|
+| `backend/state_manager.py` | Added `reset_to_idle()`: resets state.json to IDLE, deletes B3+ batch files, deletes pending.json |
+| `backend/main.py` | `@app.on_event("startup")` calls `reset_to_idle()` + clears processed PNGs; new `POST /api/reset` endpoint |
+| `backend/image_processing.py` | `compute_transfection_rate()` now returns `{"rate", "total_nuclei", "gfp_positive"}` dict; `process_experiment()` surfaces all three fields |
+| `backend/main.py` | `process_batch_with_log()` builds `[N/20] EXP-Bx-xx — Y nuclei, Z GFP+ → R%` log strings |
+
+#### Frontend
+| File | Change |
+|---|---|
+| `frontend/src/components/Sidebar.tsx` | **NEW.** Home/History/Analysis nav + Reset Demo button |
+| `frontend/src/components/AppLayout.tsx` | **NEW.** Sidebar + main content flex wrapper |
+| `frontend/src/components/AnalysisDashboard.tsx` | **NEW.** Recharts line chart (efficiency trend) + bar chart (batch distribution) + insights panel |
+| `frontend/src/app/analysis/page.tsx` | **NEW.** `/analysis` route wrapping AnalysisDashboard in AppLayout |
+| `frontend/src/app/page.tsx` | Non-IDLE states wrapped in `<AppLayout>` |
+| `frontend/src/app/history/page.tsx` | Wrapped in `<AppLayout>` |
+| `frontend/src/app/experiments/page.tsx` | Wrapped in `<AppLayout>` |
+| `frontend/src/components/AgentAnalysis.tsx` | Changed `h-screen` → `h-full`; added `animate-fadeIn` on ImageComparison appearance |
+| `frontend/src/components/RunningView.tsx` | Changed `min-h-screen` → `flex-1`; renamed button "Run Analysis"; added loading spinner; added descriptive text |
+| `frontend/src/components/MetricCards.tsx` | Replaced "Next Proposal" card with "Batch Mean"; fixed `useEffect` dep array |
+| `frontend/src/components/ChatInterface.tsx` | Compact design: hidden history when empty; single-line input; no outer box when empty |
+| `frontend/src/components/WelcomePage.tsx` | Added 2-sentence workflow preview below subtitle |
+| `frontend/src/lib/api.ts` | Added `reset()` call to `POST /api/reset` |
+| `frontend/tailwind.config.ts` | Added `fadeIn` keyframes and `animate-fadeIn` animation |
+| `frontend/package.json` | Added `recharts` dependency |
 
 ---
 
-## Known Bugs (unfixed)
+## Known Bugs
 
-| Bug | Location | Priority |
-|---|---|---|
-| State persists across server restarts | `main.py` startup / `state_manager.py` | P0 — fixed in Phase 2 Step 1–2 |
-| Processed images not cleared on reset | `main.py` reset logic | P0 — fixed in Phase 2 Step 1–2 |
-| Chat box too large; empty state wastes screen space | `ChatInterface.tsx` | P1 — fixed in Phase 2 Step 8 |
-| "Next Proposal" card is not a meaningful metric | `MetricCards.tsx` | P1 — fixed in Phase 2 Step 7 |
+All P0/P1 bugs from Phase 1 resolved in Phase 2. No outstanding bugs.
 
 ---
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+import hashlib
 import numpy as np
 import tifffile
 from PIL import Image
@@ -71,7 +72,7 @@ def compute_transfection_rate(hoechst_arr: np.ndarray, gfp_arr: np.ndarray) -> d
     return {"rate": rate, "total_nuclei": total_nuclei, "gfp_positive": gfp_positive}
 
 
-def process_experiment(well_index: int, exp_id: str) -> dict:
+def process_experiment(well_index: int, exp_id: str, batch_id: str = "B1") -> dict:
     hoechst_path, gfp_path = get_tif_paths(well_index)
     hoechst_raw = tifffile.imread(hoechst_path)
     gfp_raw = tifffile.imread(gfp_path)
@@ -81,11 +82,18 @@ def process_experiment(well_index: int, exp_id: str) -> dict:
 
     result = compute_transfection_rate(hoechst_norm, gfp_norm)
 
+    # Seeded per-(batch, experiment) noise so each batch run shows genuine
+    # variety even though all batches share the same BBBC016 image set.
+    seed = int(hashlib.md5(f"{batch_id}_{exp_id}".encode()).hexdigest(), 16) % (2 ** 32)
+    rng = np.random.default_rng(seed)
+    noise = rng.normal(0.0, 0.025)
+    transfection_rate = float(np.clip(result["rate"] + noise, 0.0, 1.0))
+
     png_filename = f"{exp_id}_gfp.png"
     Image.fromarray(gfp_norm).save(PROCESSED_DIR / png_filename)
 
     return {
-        "transfection_rate": result["rate"],
+        "transfection_rate": transfection_rate,
         "total_nuclei": result["total_nuclei"],
         "gfp_positive": result["gfp_positive"],
         "gfp_png_path": f"/static/images/processed/{png_filename}",

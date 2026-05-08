@@ -136,6 +136,24 @@ class StateManager:
             (self.data_dir / "proposals" / "pending.json").unlink(missing_ok=True)
             (self.data_dir / "state.json").write_text(json.dumps(IDLE_DEFAULTS, indent=2))
 
+    def sanitize_state_on_startup(self) -> None:
+        """Revert orphaned transient states (e.g. crash mid-PROCESSING) to IDLE.
+        Batch files are never deleted — only state.json is reset."""
+        _transient = {"RUNNING", "COMPLETE", "PROCESSING", "ANALYZING", "REGENERATING", "APPROVED"}
+        with self._lock:
+            state = json.loads((self.data_dir / "state.json").read_text())
+            if state.get("current_state") in _transient:
+                state.update(IDLE_DEFAULTS)
+                (self.data_dir / "state.json").write_text(json.dumps(state, indent=2))
+
+    def mark_batch_complete(self, batch_id: str) -> None:
+        """Set status='complete' on a batch JSON after image processing finishes."""
+        batch_path = self.data_dir / "batches" / f"batch_{batch_id}.json"
+        with self._lock:
+            batch = json.loads(batch_path.read_text())
+            batch["status"] = "complete"
+            batch_path.write_text(json.dumps(batch, indent=2))
+
     def finalize_batch_top_performer(self, batch_id: str) -> None:
         """Set is_top_performer=True on the highest transfection_rate experiment. Thread-safe."""
         batch_path = self.data_dir / "batches" / f"batch_{batch_id}.json"

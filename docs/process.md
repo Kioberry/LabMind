@@ -125,9 +125,39 @@ Full spec in `docs/frontend_modification.md`. All steps implemented:
 
 ---
 
+## Phase 3 — Backend Bug Fixes ✅ Complete
+
+Full spec in `docs/backend_modification.md`. Three bugs fixed:
+
+| # | Bug | Root cause | Fix |
+|---|-----|-----------|-----|
+| 1 | History/Analysis/Experiments only showed B1 | Batch status never transitioned from `"pending"` to `"complete"`; all three frontend pages filter `status === 'complete'` | Added `mark_batch_complete(batch_id)` to `StateManager`; called it in `process_batch_with_log()` after `finalize_batch_top_performer()` |
+| 2 | B3+ data deleted on every server restart | `startup_event` called `reset_to_idle()` which deletes all B3+ batch files | Replaced with `sanitize_state_on_startup()` — only reverts orphaned mid-run states to IDLE; batch files are never touched on restart |
+| 3 | All batches produced identical transfection rates | `process_experiment()` always reads the same BBBC016 TIF files with no batch variation | Added `batch_id` param + seeded per-`(batch_id, exp_id)` Gaussian noise (σ = 2.5%) after real image computation; results stay reproducible but differ across batches |
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/state_manager.py` | Added `sanitize_state_on_startup()`, `mark_batch_complete()` |
+| `backend/main.py` | Startup calls `sanitize_state_on_startup()` instead of `reset_to_idle()`; `mark_batch_complete()` called after processing; `process_experiment()` receives `batch_id` |
+| `backend/image_processing.py` | Added `import hashlib`; `process_experiment(well_index, exp_id, batch_id)` signature; seeded noise block |
+| `data/batches/batch_B2.json` | One-time manual migration: `"status"` set to `"complete"` |
+
+### How restart and reset now behave
+
+| Action | What happens |
+|---|---|
+| **Backend restart** | Processed PNGs cleared; state.json reverted to IDLE only if mid-run (e.g. crash during PROCESSING); **all batch files preserved** |
+| **Frontend restart** | No effect on backend state |
+| **Reset Demo button** (`POST /api/reset`) | Full wipe: state → IDLE, B3+ batch files deleted, pending.json deleted. B1 and B2 are kept as the pre-seeded historical baseline |
+| **Clean slate (no batch history)** | Manually delete `data/batches/batch_B2.json`, then click Reset Demo or restart backend |
+
+---
+
 ## Known Bugs
 
-All P0/P1 bugs from Phase 1 resolved in Phase 2. No outstanding bugs.
+None outstanding.
 
 ---
 
@@ -135,8 +165,9 @@ All P0/P1 bugs from Phase 1 resolved in Phase 2. No outstanding bugs.
 
 | Path | Description |
 |---|---|
-| `data/state.json` | Current system state — **auto-reset to IDLE on server startup (after Phase 2)** |
-| `data/batches/batch_B1.json` | B1 historical data (rates: 0.05–0.15, calibrated for correct vs Prior Batch display) |
-| `data/batches/batch_B2.json` | B2 historical data (rates: real TIF-derived values) |
+| `data/state.json` | Current system state — persists across restarts; reverted to IDLE only if caught mid-run |
+| `data/batches/batch_B1.json` | Pre-seeded B1 historical data (rates: 0.05–0.15). Never deleted by reset |
+| `data/batches/batch_B2.json` | Pre-seeded B2 historical data. Deleted only by manual action or full DB wipe |
+| `data/batches/batch_B3+.json` | Runtime-generated batches — deleted by `POST /api/reset` |
 | `static/images/` | Raw BBBC016 TIF files (144 files: 24 wells × 3 fields × 2 channels) |
-| `static/images/processed/` | Runtime-generated GFP channel PNGs — **cleared on every reset** |
+| `static/images/processed/` | Runtime-generated GFP channel PNGs — cleared on every backend restart and reset |

@@ -82,7 +82,7 @@ async def startup_event() -> None:
     from image_processing import PROCESSED_DIR
     for f in PROCESSED_DIR.glob("*.png"):
         f.unlink(missing_ok=True)
-    state_manager.reset_to_idle()
+    state_manager.sanitize_state_on_startup()
 
 
 @app.get("/health")
@@ -228,7 +228,7 @@ def process_batch_with_log(batch_id: str, exp_ids: list[str]) -> list[dict]:
     n_total = len(exp_ids)
     for i, exp_id in enumerate(exp_ids):
         well_index = i + 1
-        result = process_experiment(well_index, exp_id)
+        result = process_experiment(well_index, exp_id, batch_id)
         results.append({"exp_id": exp_id, **result})
         state_manager.update_experiment_result(batch_id, exp_id, result["transfection_rate"])
         rate_pct = round(result["transfection_rate"] * 100, 1)
@@ -240,6 +240,7 @@ def process_batch_with_log(batch_id: str, exp_ids: list[str]) -> list[dict]:
         )
         time.sleep(0.4)
     state_manager.finalize_batch_top_performer(batch_id)
+    state_manager.mark_batch_complete(batch_id)
     if not results:
         return results
     top = max(results, key=lambda r: r["transfection_rate"])

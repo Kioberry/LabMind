@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'labmind-api.up.railway.app',
+        hostname: 'labmind-production.up.railway.app',
       },
       {
         protocol: 'http',

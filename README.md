@@ -1,6 +1,7 @@
 # LabMind
 
 **Live Agent:** https://lab-mind.vercel.app/
+
 **Demo Video:** https://youtu.be/_BhIjSgo9Jo 
 
 ![LabMind screenshot](docs/screenshot.png)

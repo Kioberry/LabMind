@@ -1,5 +1,10 @@
 # LabMind
 
+**Live Agent:** https://lab-mind.vercel.app/
+**Demo Video:** https://youtu.be/_BhIjSgo9Jo 
+
+![LabMind screenshot](docs/screenshot.png)
+
 An AI agent dashboard for autonomous scientific experiment optimization. LabMind demonstrates a human-in-the-loop workflow where an AI proposes the next batch of laboratory experiments, researchers review and optionally adjust the proposal, and then approve it — creating a continuous optimization loop.
 
 **Research domain:** mRNA-LNP (lipid nanoparticle) delivery optimization — finding the optimal combination of pH, temperature, mRNA concentration, lipid ratio, and incubation time to maximize transfection efficiency.

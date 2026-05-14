@@ -39,10 +39,6 @@ body {
 }
 
 .main-content {
-  background-image: url('/background.svg');
-  background-repeat: no-repeat;
-  background-position: right center;
-  background-size: auto 100%;
 }
 
 ::selection {

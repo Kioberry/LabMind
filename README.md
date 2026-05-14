@@ -14,17 +14,26 @@ An AI agent dashboard for autonomous scientific experiment optimization. LabMind
 
 ## What This Agent Does
 
-LabMind runs a LangChain ReAct agent backed by Claude that autonomously:
+LabMind runs a LangChain ReAct agent powered by Claude that closes the loop between experimental results and next-step decisions.
 
-1. Processes fluorescence microscopy TIF images (BBBC016 dataset) to measure transfection efficiency per experiment using computer vision (Otsu thresholding + watershed segmentation)
-2. Identifies the top-performing parameter combination across a 20-experiment batch
-3. Generates 20 optimized parameter candidates for the next batch using Bayesian optimization (Latin Hypercube Sampling centered on the top performer)
-4. Produces a scientific analysis of the batch results in natural language
-5. Accepts researcher constraints via chat (e.g. "exclude concentrations above 0.3 mg/mL") and regenerates a compliant proposal
+1. **Process experimental data**  
+   The system starts by processing fluorescence microscopy TIF images from a batch of experiments. Using computer vision methods(Otsu thresholding and watershed segmentation), it measures transfection efficiency for each condition.
 
-The agent is designed for physical laboratory settings where each batch takes hours to days to complete. All experiments in a batch run in parallel, not serially. The researcher is always in the loop — the agent proposes, the researcher reviews and approves.
+2. **Identify the best-performing result**  
+   Once all experiments in the batch are analyzed, the agent compares outcomes and identifies the top-performing parameter combination.
 
-**Where to use it:** As a demo or starting point for any lab automation workflow that needs human-in-the-loop AI optimization — drug formulation, cell culture condition screening, process parameter optimization, or any domain where experiments run in parallel batches and convergence toward an optimum is the goal.
+3. **Generate the next experiment proposal**  
+   The agent uses the result as the center point for Bayesian optimization, generating a new set of parameters for the next batch.
+
+4. **Explain the outcome**  
+   Alongside the proposal, the agent produces a structured scientific analysis that explains what drove the result and why the next range is worth exploring.
+
+5. **Refine with human input**  
+   Before moving forward, the researcher can set constraints in the chat interface. The agent incorporates these constraints, regenerates the parameter space, and updates both the proposal and the reasoning.
+
+This system is designed for real laboratory settings where experiments run in parallel and each batch takes hours or days to complete. The agent handles the optimization loop, while the researcher remains in control of the final decision.
+
+**Where to use it:** This serves as a starting point for lab workflows that require iterative optimization with human oversight, including drug formulation, cell culture condition screening, and other batch-based experimental systems.
 
 ---
 
@@ -44,9 +53,9 @@ The agent is designed for physical laboratory settings where each batch takes ho
 
 ---
 
-## How to Run Locally
+## How to Run
 
-You need two terminals — one for the backend, one for the frontend.
+You need two terminals: one for the backend, one for the frontend.
 
 ### Prerequisites
 
@@ -81,23 +90,9 @@ The frontend starts at `http://localhost:3000`.
 
 ### Verify
 
-Open `http://localhost:3000` — you should see the Welcome page. The History page should show pre-seeded batches B1 and B2.
+Open `http://localhost:3000` to check the Welcome page.
 
 ---
-
-
-## User Workflow
-
-The system moves through a state machine. The frontend polls `GET /api/status` every 4 seconds to reflect live state changes.
-
-```
-IDLE → RUNNING → COMPLETE → PROCESSING → ANALYZING → PROPOSAL_READY → APPROVED → RUNNING → ...
-```
-
-**Optional editing branch:**
-```
-PROPOSAL_READY → EDITING → REGENERATING → PROPOSAL_READY → APPROVED
-```
 
 
 ## Project Structure
@@ -125,22 +120,6 @@ LabMind/
         ├── hooks/            # usePolling (4s), useChat
         └── lib/              # api.ts (typed fetch client), types.ts
 ```
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Health check — used by Railway |
-| `GET` | `/api/status` | Current state, batch ID, analysis text, chat history, image URLs. Polled every 4s. |
-| `GET` | `/api/batch/{id}` | Full batch data — all 20 experiments with parameters and results |
-| `GET` | `/api/batches` | All batch summaries for the history page |
-| `POST` | `/api/simulate` | Triggers the full agent loop as a background task |
-| `POST` | `/api/chat` | Send a message to the agent; detects constraints and transitions to EDITING |
-| `POST` | `/api/approve` | Commits pending proposal as next batch JSON, resets to RUNNING |
-| `POST` | `/api/regenerate` | Regenerates proposal with current constraint |
-| `POST` | `/api/reset` | Resets demo: state → IDLE, deletes B3+ batches, keeps B1 and B2 |
 
 ---
 

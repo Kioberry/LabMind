@@ -111,7 +111,7 @@ async def reset_endpoint() -> dict:
 @app.post("/api/simulate", response_model=SimulateResponse)
 async def simulate_endpoint(background_tasks: BackgroundTasks) -> SimulateResponse:
     s = state_manager.get_state()
-    if s["current_state"] not in ("IDLE", "RUNNING"):
+    if s["current_state"] != "IDLE":
         raise HTTPException(status_code=409, detail=f"Cannot simulate: current state is {s['current_state']}")
     state_manager.set_state("RUNNING")
     if s["current_batch_id"] is None:

@@ -25,6 +25,13 @@ from models import (
     ImageUrls, ProposalSummary, _compute_proposal_summary,
 )
 
+timing_logger = logging.getLogger("labmind.timing")
+if not timing_logger.handlers:
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(asctime)s %(name)s %(message)s"))
+    timing_logger.addHandler(_h)
+    timing_logger.setLevel(logging.INFO)
+
 app = FastAPI(title="LabMind API")
 
 app.add_middleware(
@@ -224,6 +231,15 @@ async def regenerate_endpoint(background_tasks: BackgroundTasks) -> RegenerateRe
     return RegenerateResponse(status="started")
 
 
+def _record_timing(batch_id: str, key: str, seconds: float, **extra) -> None:
+    """Log one wall-clock timing and keep it in state.json under timings[batch_id]."""
+    timing_logger.info("batch=%s %s=%.3fs %s", batch_id, key, seconds, extra or "")
+    s = state_manager.get_state()
+    timings = s.get("timings") or {}
+    timings.setdefault(batch_id, {}).update({key: round(seconds, 4), **extra})
+    state_manager.update_state({"timings": timings})
+
+
 def _measure_experiment(well_index: int, exp: dict, batch_id: str, mode: str) -> tuple[dict, str]:
     """Return (result, log line) for one experiment from the selected objective."""
     exp_id = exp["exp_id"]
@@ -248,16 +264,24 @@ def process_batch_with_log(batch_id: str, experiments: list[dict]) -> list[dict]
     mode = get_objective_mode()
     results = []
     n_total = len(experiments)
+    compute_seconds = 0.0  # wall clock of measurement only; excludes the cosmetic sleep below
     for i, exp in enumerate(experiments):
         exp_id = exp["exp_id"]
         well_index = i + 1
+        t0 = time.perf_counter()
         result, log_line = _measure_experiment(well_index, exp, batch_id, mode)
+        compute_seconds += time.perf_counter() - t0
         results.append({"exp_id": exp_id, **result})
         state_manager.update_experiment_result(batch_id, exp_id, result["transfection_rate"])
         state_manager.append_processing_log(f"[{i + 1}/{n_total}]  {log_line}")
         time.sleep(0.4)
     state_manager.finalize_batch_top_performer(batch_id)
     state_manager.mark_batch_complete(batch_id)
+    _record_timing(batch_id, "measurement_seconds", compute_seconds, mode=mode, n_experiments=n_total)
+    state_manager.append_processing_log(
+        f"  Measurement compute time: {compute_seconds:.1f} s for {n_total} experiments "
+        f"(excludes the 0.4 s/experiment display delay)"
+    )
     if not results:
         return results
     top = max(results, key=lambda r: r["transfection_rate"])
@@ -286,12 +310,17 @@ async def run_agent_loop(batch_id: str) -> None:
     state_manager.append_processing_log("Running AI scientific analysis...")
     state_manager.append_processing_log(f"  Loading experiment data for batch {batch_id}...")
 
+    t0 = time.perf_counter()
     try:
         result = await asyncio.to_thread(agent.run_analysis_loop, batch_id)
     except Exception as exc:
         logging.error("Agent analysis failed: %s", exc)
         state_manager.update_state({"current_state": "IDLE"})
         return
+    # Full decision step: Claude tool-calling loop incl. proposal generation and LLM latency.
+    agent_seconds = time.perf_counter() - t0
+    _record_timing(batch_id, "agent_decision_seconds", agent_seconds)
+    state_manager.append_processing_log(f"  Decision time (agent analysis + proposal): {agent_seconds:.1f} s")
 
     state_manager.append_processing_log("✓  Proposal ready for researcher review.")
     next_id = _next_batch_id(batch_id)

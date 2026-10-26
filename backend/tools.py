@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import time
 import statistics
 from datetime import datetime, timezone
 from pathlib import Path
@@ -153,7 +155,11 @@ def propose_candidates(top_performer: dict, batch_id: str, seed: int | None = No
 def generate_next_batch_impl(top_performer: dict, constraints: str | None, batch_id: str) -> list[dict]:
     from state_manager import StateManager
 
+    t0 = time.perf_counter()
     experiments = propose_candidates(top_performer, batch_id)
+    logging.getLogger("labmind.timing").info(
+        "proposal=%s propose_candidates_seconds=%.4f", batch_id, time.perf_counter() - t0
+    )
 
     if constraints and constraints.strip():
         experiments = _apply_constraints_via_claude(experiments, constraints)

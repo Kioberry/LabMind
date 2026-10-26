@@ -16,7 +16,8 @@ import anthropic
 
 from state_manager import StateManager
 from agent import LabMindAgent
-from image_processing import process_experiment
+from image_processing import process_experiment, render_gfp_png
+from simulation import get_objective_mode, simulate_experiment, OBJECTIVE_MODE_SIMULATION
 from models import (
     ChatRequest, ChatResponse,
     StatusResponse, BatchResponse, BatchSummary,
@@ -223,21 +224,37 @@ async def regenerate_endpoint(background_tasks: BackgroundTasks) -> RegenerateRe
     return RegenerateResponse(status="started")
 
 
-def process_batch_with_log(batch_id: str, exp_ids: list[str]) -> list[dict]:
+def _measure_experiment(well_index: int, exp: dict, batch_id: str, mode: str) -> tuple[dict, str]:
+    """Return (result, log line) for one experiment from the selected objective."""
+    exp_id = exp["exp_id"]
+    if mode == OBJECTIVE_MODE_SIMULATION:
+        # SIMULATION: rate comes from a synthetic response surface of the parameters.
+        # The GFP image is still rendered so the UI comparison panel keeps working.
+        result = simulate_experiment(exp["parameters"], exp_id, batch_id)
+        result["gfp_png_path"] = render_gfp_png(well_index, exp_id)
+        rate_pct = round(result["transfection_rate"] * 100, 1)
+        return result, f"{exp_id} — [simulated objective] → {rate_pct}% efficiency"
+    result = process_experiment(well_index, exp_id, batch_id)
+    rate_pct = round(result["transfection_rate"] * 100, 1)
+    total_nuclei = result.get("total_nuclei", 0)
+    gfp_positive = result.get("gfp_positive", 0)
+    return result, (
+        f"{exp_id} — {total_nuclei} nuclei detected, "
+        f"{gfp_positive} GFP+ cells → {rate_pct}% efficiency"
+    )
+
+
+def process_batch_with_log(batch_id: str, experiments: list[dict]) -> list[dict]:
+    mode = get_objective_mode()
     results = []
-    n_total = len(exp_ids)
-    for i, exp_id in enumerate(exp_ids):
+    n_total = len(experiments)
+    for i, exp in enumerate(experiments):
+        exp_id = exp["exp_id"]
         well_index = i + 1
-        result = process_experiment(well_index, exp_id, batch_id)
+        result, log_line = _measure_experiment(well_index, exp, batch_id, mode)
         results.append({"exp_id": exp_id, **result})
         state_manager.update_experiment_result(batch_id, exp_id, result["transfection_rate"])
-        rate_pct = round(result["transfection_rate"] * 100, 1)
-        total_nuclei = result.get("total_nuclei", 0)
-        gfp_positive = result.get("gfp_positive", 0)
-        state_manager.append_processing_log(
-            f"[{i + 1}/{n_total}]  {exp_id} — {total_nuclei} nuclei detected, "
-            f"{gfp_positive} GFP+ cells → {rate_pct}% efficiency"
-        )
+        state_manager.append_processing_log(f"[{i + 1}/{n_total}]  {log_line}")
         time.sleep(0.4)
     state_manager.finalize_batch_top_performer(batch_id)
     state_manager.mark_batch_complete(batch_id)
@@ -258,9 +275,8 @@ async def run_agent_loop(batch_id: str) -> None:
     state_manager.set_state("PROCESSING")
 
     batch_data = state_manager.read_batch(batch_id)
-    exp_ids = [e["exp_id"] for e in batch_data["experiments"]]
     try:
-        await asyncio.to_thread(process_batch_with_log, batch_id, exp_ids)
+        await asyncio.to_thread(process_batch_with_log, batch_id, batch_data["experiments"])
     except Exception as exc:
         logging.error("Image processing failed: %s", exc)
         state_manager.set_state("IDLE")

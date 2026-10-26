@@ -72,6 +72,15 @@ def compute_transfection_rate(hoechst_arr: np.ndarray, gfp_arr: np.ndarray) -> d
     return {"rate": rate, "total_nuclei": total_nuclei, "gfp_positive": gfp_positive}
 
 
+def render_gfp_png(well_index: int, exp_id: str) -> str:
+    """Save the normalized GFP image for display only (no segmentation, no rate)."""
+    _, gfp_path = get_tif_paths(well_index)
+    gfp_norm = normalize_channel(tifffile.imread(gfp_path))
+    png_filename = f"{exp_id}_gfp.png"
+    Image.fromarray(gfp_norm).save(PROCESSED_DIR / png_filename)
+    return f"/static/images/processed/{png_filename}"
+
+
 def process_experiment(well_index: int, exp_id: str, batch_id: str = "B1") -> dict:
     hoechst_path, gfp_path = get_tif_paths(well_index)
     hoechst_raw = tifffile.imread(hoechst_path)

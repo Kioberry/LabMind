@@ -112,35 +112,48 @@ def get_comparison_images_impl(top_exp_id: str, batch_id: str, baseline_exp_id: 
     }
 
 
+def _row_to_params(row) -> dict:
+    """Round one scaled sample row to the lab-feasible grid (integer °C / hours, n:1 lipid ratio)."""
+    lr_int = max(2, min(4, int(round(float(row[3])))))
+    return {
+        "pH": round(float(row[0]), 2),
+        "temperature_c": int(round(float(row[1]))),
+        "concentration_mg_ml": round(float(row[2]), 3),
+        "lipid_ratio": f"{lr_int}:1",
+        "incubation_hours": int(round(float(row[4]))),
+    }
+
+
+def _default_seed(batch_id: str) -> int:
+    return sum(ord(c) for c in batch_id) % (2 ** 31)
+
+
+def propose_candidates(top_performer: dict, batch_id: str, seed: int | None = None,
+                       n: int = N_CANDIDATES) -> list[dict]:
+    """
+    Pure proposal step of generate_next_batch: Latin Hypercube sample of n candidates
+    inside a box of ±SAMPLING_RADIUS_FRACTION × range around the top performer.
+    No LLM calls, no file I/O. seed=None reproduces the production behaviour
+    (seed derived from batch_id); the offline evaluation passes explicit seeds.
+    """
+    l_bounds, u_bounds = _get_sampling_bounds(top_performer)
+
+    if seed is None:
+        seed = _default_seed(batch_id)
+    sampler = qmc.LatinHypercube(d=5, seed=seed)
+    unit_sample = sampler.random(n=n)
+    scaled = qmc.scale(unit_sample, l_bounds, u_bounds)
+
+    return [
+        {"exp_id": f"EXP-{batch_id}-{i + 1:02d}", "parameters": _row_to_params(row)}
+        for i, row in enumerate(scaled)
+    ]
+
+
 def generate_next_batch_impl(top_performer: dict, constraints: str | None, batch_id: str) -> list[dict]:
     from state_manager import StateManager
 
-    l_bounds, u_bounds = _get_sampling_bounds(top_performer)
-
-    seed = sum(ord(c) for c in batch_id) % (2 ** 31)
-    sampler = qmc.LatinHypercube(d=5, seed=seed)
-    unit_sample = sampler.random(n=N_CANDIDATES)
-    scaled = qmc.scale(unit_sample, l_bounds, u_bounds)
-
-    experiments = []
-    for i, row in enumerate(scaled):
-        ph     = round(float(row[0]), 2)
-        temp   = int(round(float(row[1])))
-        conc   = round(float(row[2]), 3)
-        lr_int = max(2, min(4, int(round(float(row[3])))))
-        lr_str = f"{lr_int}:1"
-        hours  = int(round(float(row[4])))
-
-        experiments.append({
-            "exp_id": f"EXP-{batch_id}-{i + 1:02d}",
-            "parameters": {
-                "pH": ph,
-                "temperature_c": temp,
-                "concentration_mg_ml": conc,
-                "lipid_ratio": lr_str,
-                "incubation_hours": hours,
-            }
-        })
+    experiments = propose_candidates(top_performer, batch_id)
 
     if constraints and constraints.strip():
         experiments = _apply_constraints_via_claude(experiments, constraints)

@@ -9,6 +9,8 @@ from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
+from llm import MODEL, THINKING_KWARGS
+
 from tools import (
     LOAD_BATCH_TOOL,
     FIND_TOP_PERFORMER_TOOL,
@@ -60,10 +62,11 @@ def _next_batch_id(batch_id: str) -> str:
 
 class LabMindAgent:
     def __init__(self) -> None:
+        # Current models reject a non-default temperature, so none is set.
         self.llm = ChatAnthropic(
-            model="claude-sonnet-4-20250514",
-            temperature=0.3,
-            max_tokens=4096,
+            model=MODEL,
+            max_tokens=16000,
+            **THINKING_KWARGS,
         )
 
         self.tools = [

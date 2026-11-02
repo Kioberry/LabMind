@@ -10,6 +10,8 @@ import numpy as np
 from scipy.stats import qmc
 from langchain.tools import Tool
 
+from llm import MODEL, THINKING_KWARGS, first_text
+
 DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
 
 PARAM_BOUNDS = {
@@ -75,12 +77,13 @@ Instructions:
 Return format: [{{"exp_id": "...", "parameters": {{"pH": ..., "temperature_c": ..., "concentration_mg_ml": ..., "lipid_ratio": "...", "incubation_hours": ...}}}}, ...]"""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=4096,
+        model=MODEL,
+        max_tokens=16000,
         messages=[{"role": "user", "content": prompt}],
+        **THINKING_KWARGS,
     )
 
-    content = message.content[0].text.strip()
+    content = first_text(message)
     start = content.find("[")
     end = content.rfind("]") + 1
     return json.loads(content[start:end])

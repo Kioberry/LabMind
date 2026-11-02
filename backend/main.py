@@ -11,6 +11,8 @@ load_dotenv()
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from llm import MODEL, THINKING_KWARGS, first_text
 from fastapi.staticfiles import StaticFiles
 import anthropic
 
@@ -78,11 +80,12 @@ def _rewrite_analysis_with_constraints(
         f"Return only the rewritten analysis text — no JSON, no markdown."
     )
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=512,
+        model=MODEL,
+        max_tokens=2048,
         messages=[{"role": "user", "content": prompt}],
+        **THINKING_KWARGS,
     )
-    return message.content[0].text.strip()
+    return first_text(message)
 
 
 @app.on_event("startup")

@@ -1,6 +1,6 @@
 # LabMind
 
-**Live Agent:** https://lab-mind.vercel.app/
+**Live Agent:** https://labmind-840267766274.us-central1.run.app/
 
 **Demo Video:** https://youtu.be/_BhIjSgo9Jo 
 
@@ -48,7 +48,7 @@ This system is designed for real laboratory settings where experiments run in pa
 | Optimization | Latin Hypercube Sampling (`scipy.stats.qmc`) |
 | Image processing | `tifffile`, `scikit-image` (Otsu threshold, watershed), `Pillow` |
 | Data store | JSON files (no database) |
-| Deployment | Frontend → Vercel, Backend → Railway |
+| Deployment | One Google Cloud Run container (FastAPI serves the exported Next.js UI), deployed by GitHub Actions on every push to `main` |
 | Image dataset | BBBC016 (Broad Institute) — GFP fluorescence TIF files |
 
 ---
@@ -132,5 +132,4 @@ LabMind/
 - [Latin Hypercube Sampling (scipy.stats.qmc)](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.LatinHypercube.html) — Bayesian optimization sampling method
 - [FastAPI](https://fastapi.tiangolo.com) — Python backend framework
 - [Next.js](https://nextjs.org/docs) — React frontend framework
-- [Railway](https://railway.app) — backend deployment platform
-- [Vercel](https://vercel.com) — frontend deployment platform
+- [Google Cloud Run](https://cloud.google.com/run) — deployment platform

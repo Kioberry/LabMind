@@ -388,3 +388,8 @@ async def finalize_approval() -> None:
 
 # Static files mount — must come after all route registrations
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# In the single-container deploy (see /Dockerfile) the exported frontend sits in ./web and is served at the root,
+# so the UI and the API share one origin. Locally there is no ./web and the Next dev server serves the UI.
+if os.path.isdir("web"):
+    app.mount("/", StaticFiles(directory="web", html=True), name="web")

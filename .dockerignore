@@ -1,0 +1,13 @@
+**/.env
+**/.env.*
+**/node_modules
+**/.next
+**/out
+**/.venv
+**/__pycache__
+**/.pytest_cache
+backend/static/images/processed
+.git
+docs
+.agents
+.claude

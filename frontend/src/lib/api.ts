@@ -1,6 +1,7 @@
 import { StatusResponse, BatchResponse, BatchSummary } from './types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+// Empty when the UI is served by the backend itself (the Cloud Run deploy), so requests stay on the same origin.
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '';
 
 export const api = {
   getStatus: (): Promise<StatusResponse> =>
